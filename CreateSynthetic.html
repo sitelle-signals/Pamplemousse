@@ -1,0 +1,172 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.23.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.23.0/prism.min.js" integrity="sha512-YBk7HhgDZvBxmtOfUdvX0z8IH2d10Hp3aEygaMNhtF8fSOvBZ16D/1bXZTJV6ndk/L/DlXxYStP8jrF77v2MIg==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.23.0/components/prism-python.min.js" integrity="sha512-wK9tQmDrstGtZqTKcyVf3h457QGMlNriKs+fHmEkiCizrq0LVovfT3v1smeT1DlQetHhdRkkX1JSuZg5LoNHJg==" crossorigin="anonymous"></script>
+
+
+<p>
+  In this demonstration, we will go through the steps to create synthetic data. Although we are only going to create a
+  synthetic SN3 spectrum, this code can be easily changed to accommodate any lines present in the SITELLE filters.
+  Please note that this requires ORBS which can be installed via <a href="https://github.com/thomasorb/orb">https://github.com/thomasorb/orb</a>.
+  The environment also requires pandas, pymysql, numpy, and astropy. You can find a jupyter notebook version
+  <a href="https://github.com/sitelle-signals/Pamplemousse/blob/master/1_Generate-Data.ipynb">here</a>.
+</p>
+
+<p>
+  Let's do some imports.
+</p>
+
+<pre>
+  <code class="language-python">
+    # Imports
+    from astropy.io import fits
+    from orb.core import Lines
+    import pandas as pd
+    import pylab as pl
+    import numpy as np
+    import datetime
+    import orb.fit
+    import random
+    import pymysql
+  </code>
+</pre>
+
+<p>
+  Next, we will set the spectral resolution, velocity, and broadening (velocity dispersion) we want to sample.
+</p>
+
+<pre>
+  <code class="language-python">
+    # Set Directory
+    output_dir = '/your/path/here/'  # Include trailing /
+    # Set observation parameters
+    step = 2943  # Step Number -- don't change
+    order = 8  # Order number -- don't change
+    resolution = 5000  # Maximum resolution
+    vel_num = 2000  # Number of Velocity Values Sampled
+    broad_num = 100  # Number of Broadening Values Sampled
+    theta_num = 100  # Number of Theta Values Sampled
+    num_syn = 1000  # Number of Synthetic Spectra
+    SNR = 50  # Define SNR
+  </code>
+</pre>
+
+<p>
+  We will now define a handful of lines that we will use to build the synthetic spectra.
+</p>
+
+<pre>
+  <code class="language-python">
+    # Now we need to get our emission lines of interest
+    halpha_cm1 = Lines().get_line_cm1('Halpha')
+    NII6548_cm1 = Lines().get_line_cm1('[NII]6548')
+    NII6583_cm1 = Lines().get_line_cm1('[NII]6583')
+    SII6716_cm1 = Lines().get_line_cm1('[SII]6716')
+    SII6731_cm1 = Lines().get_line_cm1('[SII]6731')
+  </code>
+</pre>
+
+<p>
+  In our paper, we used line amplitudes from the Million Mexican Model Database Bond runs. Please note that the amplitudes
+  do <i>not</i> have to be chosen in this way.
+</p>
+
+<pre>
+  <code class="language-python">
+    # We must alo get our flux values from 3mdb
+    # First we load in the parameters needed to login to the sql database
+    #!!!! TO RUN THIS CODE YOU MUST FILL IN THE MdB variables   !!!!
+    #!!!! TO ACCESS THESE GO TO https://sites.google.com/site/mexicanmillionmodels/ !!!!
+    #!!!! AND ASK TO JOIN THE GOOGLE GROUP !!!!
+    MdB_HOST=''
+    MdB_USER=''
+    MdB_PASSWD=''
+    MdB_PORT=''
+    MdB_DBs=''
+    MdB_DBp=''
+    MdB_DB_17=''
+    # Now we connect to the database
+    co = pymysql.connect(host=MdB_HOST, db=MdB_DB_17, user=MdB_USER, passwd=MdB_PASSWD)
+    # Now we get the lines we want
+    ampls = pd.read_sql("select H__1_656281A as h1, N__2_654805A as n1, N__2_658345A as n2, \
+                      S__2_673082A  as s1, S__2_671644A as s2,   \
+                      com1 as U, com2 as gf, com4 as ab \
+                      from tab_17 \
+                      where ref = 'BOND'"
+                        , con=co)
+    # We will now filter out values that are non representative of our SIGNALS sample
+    filter1 = ampls['U'] == 'lU_mean = -2.5'
+    filter2 = ampls['U'] == 'lU_mean = -3.0'
+    filter3 = ampls['U'] == 'lU_mean = -3.5'
+    filter4 = ampls['gf'] == 'fr = 3.0'
+    ampls_filter = ampls.where(filter1 | filter2 | filter3 & filter4).dropna()
+    ampls_filter = ampls_filter.reset_index(drop=True)
+  </code>
+</pre>
+
+<p>
+  Finally, we can create our spectra and save them as fits files!
+</p>
+
+<pre>
+  <code class="language-python">
+    # We now can model the lines. For the moment, we will assume all lines have the same velocity and broadening
+    # Do this for randomized combinations of vel_ and broad_
+    for spec_ct in range(num_syn):
+        pick_new = True
+        # Randomly select velocity and broadening parameter and theta
+        velocity = random.choice(vel_)
+        broadening = random.choice(broad_)
+        resolution = random.choice(res_)
+        theta = 11.96
+        axis_corr = 1 / np.cos(np.deg2rad(theta))
+        # Randomly Select a M3db simulation
+        sim_num = random.randint(0,len(ampls_filter)-1)
+        sim_vals = ampls_filter.iloc[sim_num]
+        # Now add all of the lines where the amplitudes are normalized to Halpha...
+        spectrum = orb.fit.create_cm1_lines_model([halpha_cm1], [sim_vals['h1']/sim_vals['h1']],
+                                                  step, order, resolution, theta, fmodel='sincgauss',
+                                                  sigma=broadening, vel=velocity)
+        spectrum += orb.fit.create_cm1_lines_model([NII6548_cm1], [sim_vals['n1']/sim_vals['h1']],
+                                                  step, order, resolution, theta, fmodel='sincgauss',
+                                                  sigma=broadening, vel=velocity)
+        spectrum += orb.fit.create_cm1_lines_model([NII6583_cm1], [sim_vals['n2']/sim_vals['h1']],
+                                                  step, order, resolution, theta, fmodel='sincgauss',
+                                                  sigma=broadening, vel=velocity)
+        spectrum += orb.fit.create_cm1_lines_model([SII6716_cm1], [sim_vals['s1']/sim_vals['h1']],
+                                                  step, order, resolution, theta, fmodel='sincgauss',
+                                                  sigma=broadening, vel=velocity)
+        spectrum += orb.fit.create_cm1_lines_model([SII6731_cm1], [sim_vals['s2']/sim_vals['h1']],
+                                                  step, order, resolution, theta, fmodel='sincgauss',
+                                                  sigma=broadening, vel=velocity)
+        # We now add noise
+        spectrum += np.random.normal(0.0,1/SNR,spectrum.shape)
+        # Get the axis
+        spectrum_axis = orb.utils.spectrum.create_cm1_axis(np.size(spectrum), step, order, corr=axis_corr)
+        # We now must get the indices for the axis at our limits -- necessary because we sample over resolution space
+        min_ = np.argmin(np.abs(np.array(spectrum_axis)-14400))  # min wavenumber is 14400
+        max_ = np.argmin(np.abs(np.array(spectrum_axis)-15700))  # max wavenumber is 15700
+        spectrum = spectrum[min_:max_]
+        spectrum_axis = spectrum_axis[min_:max_]
+        # Normalize Spectrum Values by the maximum value
+        spec_max = np.max(spectrum)
+        spectrum = [spec_/spec_max for spec_ in spectrum]
+        # Gather information to make Fits file
+        col1 = fits.Column(name='Wavenumber', format='E', array=spectrum_axis)
+        col2 = fits.Column(name='Flux', format='E', array=spectrum)
+        cols = fits.ColDefs([col1, col2])
+        hdu = fits.BinTableHDU.from_columns(cols)
+        # Header info
+        hdr = fits.Header()
+        hdr['OBSERVER'] = 'Carter Rhea'
+        hdr['COMMENT'] = "Synthetic Spectrum Number: %i"%spec_ct
+        hdr['TIME'] =  datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        hdr['VELOCITY'] = velocity
+        hdr['BROADEN'] = broadening
+        hdr['THETA'] = theta
+        hdr['SIM'] = 'BOND'
+        hdr['SIM_NUM'] = sim_num
+        empty_primary = fits.PrimaryHDU(header=hdr)
+        hdul = fits.HDUList([empty_primary, hdu])
+        hdul.writeto(output_dir+'Spectrum_%i.fits'%spec_ct, overwrite=True)
+  </code>
+</pre>

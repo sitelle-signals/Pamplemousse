@@ -24,7 +24,12 @@
     $(function(){
       $("#includedApplyDataCube").load("ApplyDataCube.html");
     });
+    $(function(){
+      $("#includedCreateSynthetic").load("CreateSynthetic.html");
+    });
+
     </script>
+
   <div id="includedContent"></div>
 
 
@@ -32,9 +37,11 @@
   <div class="container">
       <div class="row mt-5">
         <div class="col-12 mb-5 mt-5">
-          <h2>Dynamic Tabs</h2>
-          <p>To make the tabs toggleable, add the data-toggle="tab" attribute to each link. Then add a .tab-pane class with a unique ID for every tab and wrap them inside a div element with class .tab-content.</p>
-
+          <h2>Examples</h2>
+          <p>
+            Here you will find a collection of useful examples. If you would like to see a specific demonstration that isn't
+            listed here, please contact us at <span class="text-info">carter.rhea@umontreal.ca</span>.
+          </p>
           <ul class="nav nav-tabs">
             <li class="nav-item"><a data-toggle="tab" class="nav-link active" href="#create-synthetic">Create Synthetic Data</a></li>
             <li class="nav-item"><a data-toggle="tab" class="nav-link" href="#train-network">Train Network</a></li>
@@ -44,7 +51,7 @@
           <div class="tab-content">
 
             <div id="create-synthetic" class="tab-pane container active">
-              <h3 class="mt-3">Create Synthetic Data</h3>
+              <div id="includedCreateSynthetic"></div>
             </div>
             <div id="train-network" class="tab-pane container fade">
               <h3 class="mt-3">Train Network</h3>
