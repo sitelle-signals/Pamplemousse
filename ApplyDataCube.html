@@ -1,3 +1,8 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.23.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.23.0/prism.min.js" integrity="sha512-YBk7HhgDZvBxmtOfUdvX0z8IH2d10Hp3aEygaMNhtF8fSOvBZ16D/1bXZTJV6ndk/L/DlXxYStP8jrF77v2MIg==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.23.0/components/prism-python.min.js" integrity="sha512-wK9tQmDrstGtZqTKcyVf3h457QGMlNriKs+fHmEkiCizrq0LVovfT3v1smeT1DlQetHhdRkkX1JSuZg5LoNHJg==" crossorigin="anonymous"></script>
+
+
 <p>
   This example will guide you through the process of applying a pre-trained network (i.e. the weights have been trained),
   to a SITELLE data cube. This example will use the network trained to predict velocity and broadening values, therefore,
@@ -37,5 +42,101 @@
     output_dir = '/path/to/output'  # Path to output directory
     output_name = 'output_name'  # output file prefix
     deep_file = '/full/path/to/deep/fits'  # Path to deep image fits file: required for header
+  </code>
+</pre>
+
+<p>
+  Now we will load the model. In this case, we are loading the velocity and broadening predictor from the firs paper.
+  The model and weights are in the `SITELLE-PREDICTOR-I` repository.
+</p>
+
+<pre>
+  <code class="language-python">
+    model = keras.models.load_model('SITELLE-PREDICTOR-I')
+  </code>
+</pre>
+
+<p>
+  We will now load the data cube, extract a background region, calculate the indices corresponding to
+  certain wavelengths (this is required for the interpolation), and read in the reference spectrum
+</p>
+
+<pre>
+  <code class="language-python">
+    cube = SpectralCube(cube_dir+'/'+cube_name+'.hdf5')
+    # We first need to extract a random spectrum to get the x-axis (Wavenumbers) for the observation
+    axis, spectrum = cube.extract_spectrum(1000, 1000, 1)
+    # We need to find the min and max wavenumber that match our min/max from our synthetic spectra
+    min_ = np.argmin(np.abs(np.array(axis)-14400))
+    max_ = np.argmin(np.abs(np.array(axis)-15700))
+    # LOAD IN SPECTRAL INFORMATION
+    x_min = 0
+    x_max = cube.shape[0]
+    y_min = 0
+    y_max = cube.shape[1]
+    # Now pull data
+    dat = cube.get_data(x_min,x_max,y_min,y_max,min_,max_)
+    # Open our nominal spectrum and get its wavenumbers
+    ref_spec = fits.open('Reference-Spectrum.fits')
+    wavenumbers_syn = []
+    spec_ref_axis = [val[0] for val in ref_spec[1].data]
+    min_w = np.argmin(np.abs(np.array(spec_ref_axis)-14700))  # For intepolation purposes
+    max_w =np.argmin(np.abs(np.array(spec_ref_axis)-15600))
+    x_min = 0
+    x_max = cube.shape[0]
+    y_min = 0
+    y_max = cube.shape[1]
+    # Now pull data
+    dat = cube.get_data(x_min,x_max,y_min,y_max,min_,max_)
+    spec_ref_axis = np.array(spec_ref_axis)[min_w:max_w]
+    for i in range(len(spec_ref_axis)):
+        wavenumbers_syn.append(spec_ref_axis[i])
+  </code>
+</pre>
+
+<p>
+  Now for the main functionality. We are going to define our bounds (in the example it is the entire cube). We will
+  then step through the cube and apply the network to each spaxel.
+</p>
+
+<pre>
+  <code class="language-python">
+    # Define Background Region -- you may need to change the background region!!
+    sky_axis, sky_spectrum = cube.extract_spectrum(1806, 1846, 10, median=True, mean_flux=True)
+    # Create empty 2D numpy array corresponding to x/y pixels
+    vels = np.zeros((x_max, y_max))
+    broads = np.zeros((x_max, y_max))
+    start_time = time.time()
+    for i in range(x_max-x_min):
+        for j in range(y_max-y_min):
+            counts = np.zeros((1,len(wavenumbers_syn)))
+            # Interpolate to get only points equivalent to what we have in our synthetic data
+            f = interpolate.interp1d(axis[min_:max_], dat[i,j] - sky_spectrum, kind='slinear')
+            # Get fluxes of interest
+            coun = f(wavenumbers_syn)
+            max_con = np.max(coun)
+            coun = [con/max_con for con in coun]
+            counts[0] = coun
+            # Get into correct format for predictions
+            Spectrum = counts
+            Spectrum = Spectrum.reshape(1, Spectrum.shape[1], 1)
+            predictions = model.predict(Spectrum)
+            vels[i][j] = predictions[0][0]
+            broads[i][j] = predictions[0][1]
+    print(time.time()-start_time)
+  </code>
+</pre>
+
+<p>
+  And now we can finally save the velocity and broadening data as fits files.
+</p>
+
+<pre>
+  <code class="language-python">
+    # Save as Fits File
+    reg_fits = fits.open(deep_file'.fits')
+    header = reg_fits[0].header
+    fits.writeto(output_dir+'/'+output_name+'_vel.fits', vels.T, header, overwrite=True)
+    fits.writeto(output_dir+'/'+output_name+'_broad.fits', broads.T, header, overwrite=True)
   </code>
 </pre>
