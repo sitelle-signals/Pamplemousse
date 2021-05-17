@@ -1,8 +1,7 @@
-from keras.models import load_model
-from orcs.process import SpectralCube
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import time
 from keras import activations
 from keras.models import Sequential
 from keras.layers import Dense, InputLayer, Flatten, Dropout
@@ -10,11 +9,12 @@ from keras.layers.convolutional import Conv1D
 from keras.layers.convolutional import MaxPooling1D
 from keras.optimizers import Adam
 from keras.callbacks import EarlyStopping, ReduceLROnPlateau
+from keras.models import load_model
+from orcs.process import SpectralCube
 from astropy.io import fits
 from pickle import load
-from tqdm import tqdm_notebook as tqdm
 from scipy import interpolate
-import time
+
 
 #--------------------------------- INPUTS -------------------------------------#
 home_dir = '/path/to/main/directory/containing/data'   # Location weights file

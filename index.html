@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.js" integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk=" crossorigin="anonymous"></script>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <script src="include.js"></script>
+  <title>Pamplemousse</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF" crossorigin="anonymous"></script>
+</head>
+
+
+<body>
+
+  <script>
+    $(function(){
+      $("#includedContent").load("navigation.html");
+    });
+    </script>
+  <div id="includedContent"></div>
+
+
+  <!-- Header -->
+  <header class="bg-primary py-5 mb-5">
+    <div class="container h-100">
+      <div class="row h-100 align-items-center">
+        <div class="col-lg-12">
+          <h1 class="display-4 text-white mt-5 mb-2">Pamplemousse:</h1>
+          <h2 class="text-white mb-2">A set of machine learning tools for Integral Field Unit Spectral Analysis</h2>
+          <p class="lead mb-5 text-white-50">
+            Machine learning is rapidly becoming ubiquitous in astronomy. The Pamplemousse project is a collection of tools built specifically for the analysis of spectra
+            taken with the SITELLE instrument on the CFHT. The tools are developed by a team lead by Carter Rhea at the Université de Montréal. The core team includes Dr. Laurie Rousseau-Nepton,
+            Dr. Simon Prunet, and Dr. Julie Hlavacek-Larrondo.
+          </p>
+        </div>
+      </div>
+      <div class="row h-100 align-items-center">
+        <div class="col-3">
+          <figure class="figure">
+            <img src="images/X-TRA_Negatif.png" class="figure-img img-fluid rounded w-50 mt-2" alt="...">
+          </figure>
+        </div>
+        <div class="col-3">
+          <figure class="figure">
+            <img src="images/logo-UdeM-blanc.png" class="figure-img img-fluid rounded mt-2" alt="...">
+          </figure>
+        </div>
+        <div class="col-3">
+          <figure class="figure">
+            <img src="images/Logo_CRAQ_Bi_transparent.png" class="figure-img img-fluid rounded mt-2" alt="...">
+          </figure>
+        </div>
+        <div class="col-3">
+          <figure class="figure">
+            <img src="images/logo-UdeM-blanc.png" class="figure-img img-fluid rounded mt-2" alt="...">
+          </figure>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Page Content -->
+  <div class="container">
+    <div class="row">
+        <div class="col-12 mb-5">
+          <div class="card">
+            <h2 class="card-header text-center bg-dark text-warning">
+              Our Projects
+            </h2>
+
+            <div class="card-body bg-light">
+              <div id="accordion">
+                <h3 class="text-center font-weight-bold text-info">Click on the headers to learn about the projects using Pamplemousse!</h3>
+                <div class="card">
+                  <div class="card-header bg-dark" id="headingOne">
+                    <h5 class="mb-0">
+                      <button class="btn btn-link text-center" data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                         <h3 class="text-center font-weight-bold text-light">Velocity And Broadening</h3>
+                      </button>
+                    </h5>
+                  </div>
+                  <div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#accordion">
+                    <div class="card-body">
+                      <figure>
+                        <img class="w-100" src="images/cnn.jpg" />
+                        <figcaption>Fig. 3 -  Schematic Diagram of the Convolutional Neural Network employed in this work</figcaption>
+                      </figure>
+                          <p>
+                            The <a href="https://arxiv.org/abs/2008.08093">first paper</a> explores the use of a convolutional neural network to extract the flux and velocity of underlying components.
+                            We report a standard deviation of ∼5 km/s for the velocity parameter and a standard deviation of approximately 5.5 km/s for the broadening parameter.
+                          </p>
+                      <figure>
+                        <img class="w-100" src="images/Velocity_dist_30k_resvar.png" />
+                        <figcaption>Fig. 4 -  Density plot of the velocity residuals in km s−1along with the standard deviation for the test set.</figcaption>
+                      </figure>
+                    </div>
+                  </div>
+                </div>
+
+
+                <div class="card">
+                  <div class="card-header bg-dark" id="headingTwo">
+                    <h5 class="mb-0">
+                      <button class="btn btn-link text-center" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="true" aria-controls="collapseTwo">
+                         <h3 class="text-center font-weight-bold text-light">HII Region Line Ratios</h3>
+                      </button>
+                    </h5>
+                  </div>
+                  <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordion">
+                    <div class="card-body">
+                      <figure>
+                        <img class="w-100" src="images/Network.jpg" />
+                        <figcaption>Fig. 5 -  Artificial Neural Network created for this work.</figcaption>
+                      </figure>
+                      <p>
+                        In <a href="https://arxiv.org/abs/2102.06230"> this work</a>, we apply an artificial neural network to combined-filter (SN1, SN2, and SN3) SITELLE data representing typical SIGNALS large program  observations.
+                        The  network  is  designed  to  calculate important emission-line ratios for HII-like regions which are present in the primary SITELLE filters.
+                        Our resultsindicate that the network can potentially constrain the line ratios with greater precision than the standard line fitting technique implemented in ORCS \textbf{if the source spectral properties are well represented in the training set}.
+                        Timing analysis indicates that the network can  analyze  the  entire  cube  approximately  100  times faster than the standard methods.
+                      </p>
+
+                      <figure>
+                        <img class="w-100" src="images/Ratio-Errors.jpg" />
+                        <figcaption>Fig. 6 -  Line Ratio Errors for the 8 line ratios studied in this work.</figcaption>
+                      </figure>
+
+                    </div>
+                  </div>
+                </div>
+
+
+                <div class="card">
+                  <div class="card-header bg-dark" id="headingThree">
+                    <h5 class="mb-0">
+                      <button class="btn btn-link text-center" data-toggle="collapse" data-target="#collapseThree" aria-expanded="true" aria-controls="collapseThree">
+                         <h3 class="text-center font-weight-bold text-light">Multiple Component Analysis</h3>
+                      </button>
+                    </h5>
+                  </div>
+                  <div id="collapseThree" class="collapse" aria-labelledby="headingThree" data-parent="#accordion">
+                    <div class="card-body">
+                      <figure>
+                        <img class="w-100" src="images/NN-confusion.png" />
+                        <figcaption>Fig. 7 -  Confusion matrix for the convolutional neural  network used to categorize the number of underlying line-of-sight emission components.</figcaption>
+                      </figure>
+                      <p>
+                        In this paper (in preparation), the third of the series, we develop a convolutional neural network to classify spectra as having either a sin-gle or double line-of-sight component.
+                        This systemati cmethod will be critical for disentangling components in merger systems, HII regions, and supernova remnants.We demonstrate that the network outperforms AIC andBayesian  inference  model  comparisons.
+                      </p>
+                      <figure>
+                        <img class="w-100" src="images/NGC2207.png" />
+                        <figcaption>Fig. 8 -  NGC2207-IC2163 merging system.  Left:  Deep SITELLE image of the N2207/IC2163 system created withORCS. This panel shows the stacked optical emission in the component galaxies.
+                          Several structures such as the spiral arms, bulges, tidal tails, merging region (green circle), and diffuse emission regions (purple circles) stand out.
+                          Right:  Component map for the NGC2207/IC2163 system.  White pixels correspond to double component emission.  Black pixels correspond to single component emission.</figcaption>
+                      </figure>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <!-- /.row -->
+
+    <div class="row">
+
+    </div>
+    <!-- /.row -->
+    <div class="row">
+      <div class="col-md-8 mb-5">
+
+      </div>
+      <div class="col-md-4 mb-5">
+        <h2 lang='en'>Contact Us</h2>
+        <hr>
+        <address>
+          <strong lang="en"><a href='https://github.com/sitelle-signals/Pamplemousse'>https://github.com/sitelle-signals/Pamplemousse</a></strong>
+          <br>Campus MIL
+          <br>L'Université de Montréal, QC, CA
+          <br>
+        </address>
+        <address>
+          <abbr title="Email">E:</abbr>
+          <a href="mailto:#">carter.rhea@umontreal.ca</a>
+        </address>
+      </div>
+    </div>
+    <!-- /.row -->
+
+  </div>
+  <!-- /.container -->
+
+  <!-- Footer -->
+  <footer class="py-5 bg-dark">
+    <div class="container">
+      <p class="m-0 text-center text-white" lang='en'>Copyright &copy; Pamplemousse</p>
+    </div>
+    <!-- /.container -->
+  </footer>
+
+  <!-- Bootstrap core JavaScript -->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>
