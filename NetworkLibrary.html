@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+  <script src="include.js"></script>
+  <title>Pamplemousse</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.min.js" integrity="sha384-+YQ4JLhjyBLPDQt//I+STsc9iw4uQqACwlvpslubQzn4u2UU2UFM80nGisd026JF" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+
+
+<body>
+  <script>
+    $(function(){
+      $("#includedContent").load("navigation.html");
+    });
+    </script>
+
+  <div id="includedContent"></div>
+
+
+  <!-- Page Content -->
+  <div class="container">
+      <div class="row mt-5">
+        <div class="col-12 mb-5 mt-5">
+          <h2>Library of Pre-Trained Networks</h2>
+          <p>
+            The page contains a library of pre-trained networks (i.e. weights) that can be simply loaded as models in tensorflow.
+            To do this, please see the <b>Apply to Data Cube</b> example on the <a href="examples.html">examples page</a>.
+            Additionally, I will report the results of each pre-trained network.
+          </p>
+          <h3>
+            What were these networks trained on?
+          </h3>
+          <p>
+            For each set of data in the library, we created 50,000 synthetic SITELLE spectra using the formulation described
+            in the <b>Create Synthetic Data</b> example of varying resolutions. The velocity was uniformly sampled from
+            a distribution ranging from -200 km/s to 2000 km/s. The broadening values were uniformly sampled from a distribution
+            ranging from 10 km/s to 200 km/s. We created pre-trained networks for the following resolutions: 2000, 2500, 3000,
+            3500, 4000, 4500, 5000, and 7000. Each section contains a pickle file containing the spectra used, the saved
+            CNN model, an image of the reference spectrum, and statistics on the accuracy of the method on the test set.
+
+            Click on the <i class="fas fa-download text-info"></i> icon to download the pre-trained CNN.
+
+            If you would like a pre-trained library with different specifications, please feel
+            free to contact us at <span class="text-info">carter.rhea@umontreal.ca</span>.
+          </p>
+      </div>
+    </div>
+
+    <div class="row mt-5 mb-5">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header">
+              <div class="row">
+                <h4 class="ml-5">R~2000</h4>
+                <div class="ml-auto">
+                  <a href="/PREDICTORS/R2000-PREDICTOR-I.zip" download="R2000-PREDICTOR-I">
+                  <i class="fas fa-download mr-5 text-info"></i>
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-4">
+                  <figure>
+                    <img src="images/2000.png" class="w-100" style="margin-top: 8rem">
+                  </figure>
+                </div>
+                <div class="col-8">
+                  <div class="row">
+                    <div class="col mini-box"><img src="images/velocity_KDE_R2000.png" class="w-75"></div>
+                    <div class="col mini-box"><img src="images/Velocity_dist_R2000.png" class="w-75"></div>
+                  </div>
+                  <div class="row">
+                    <div class="col mini-box"><img src="images/broadening_KDE_R2000.png" class="w-75"></div>
+                    <div class="col mini-box"><img src="images/Broad_dist_R2000.png" class="w-75"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+
+</div>
+  <!-- /.container -->
+
+  <!-- Footer -->
+  <footer class="py-5 bg-dark">
+    <div class="container">
+      <p class="m-0 text-center text-white" lang='en'>Copyright &copy; Pamplemousse</p>
+    </div>
+    <!-- /.container -->
+  </footer>
+
+  <!-- Bootstrap core JavaScript -->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+</body>
+
+</html>
