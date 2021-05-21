@@ -16,6 +16,8 @@ from astropy.io import fits
 from pickle import load
 from scipy import interpolate
 from tqdm import tqdm
+from numba import njit, prange
+
 
 #--------------------------------- INPUTS -------------------------------------#
 home_dir = '/home/carterrhea/Documents/Benjamin'   # Location weights file
@@ -58,22 +60,33 @@ ct = 0
 vels = np.zeros((x_max, y_max))
 broads = np.zeros((x_max, y_max))
 start_time = time.time()
-for i in tqdm(range(x_max-x_min)):
-    for j in range(y_max-y_min):
-        counts = np.zeros((1,len(wavenumbers_syn)))
-        # Interpolate to get only points equivalent to what we have in our synthetic data
-        f = interpolate.interp1d(axis[min_:max_], dat[i,j], kind='slinear')
-        # Get fluxes of interest
-        coun = f(wavenumbers_syn)
-        max_con = np.max(coun)
-        coun = [con/max_con for con in coun]
-        counts[0] = coun
-        # Get into correct format for predictions
-        Spectrum = counts
-        Spectrum = Spectrum.reshape(1, Spectrum.shape[1], 1)
-        predictions = model.predict(Spectrum)
-        vels[i][j] = predictions[0][0]
-        broads[i][j] = predictions[0][1]
+
+@njit(parallel=True)
+def calculate_kinematics(vels_, broads_):
+    for i in tqdm(prange(x_max-x_min)):
+        vels_local = []
+        broads_local = []
+        for j in range(y_max-y_min):
+            counts = np.zeros((1,len(wavenumbers_syn)))
+            # Interpolate to get only points equivalent to what we have in our synthetic data
+            f = interpolate.interp1d(axis[min_:max_], dat[i,j], kind='slinear')
+            # Get fluxes of interest
+            coun = f(wavenumbers_syn)
+            max_con = np.max(coun)
+            coun = [con/max_con for con in coun]
+            counts[0] = coun
+            # Get into correct format for predictions
+            Spectrum = counts
+            Spectrum = Spectrum.reshape(1, Spectrum.shape[1], 1)
+            predictions = model.predict(Spectrum)
+            vels_local.append(predictions[0][0])
+            broads_local.append(predictions[0][1])
+        vels_[i] = vels_local
+        broads_[i] = broads_local
+    return vels_, broads_
+
+vels, broads = calculate_kinematics(vels, broads)
+
 print(time.time()-start_time)
 
 # Save as Fits File

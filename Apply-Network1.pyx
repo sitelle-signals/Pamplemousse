@@ -16,6 +16,7 @@ from astropy.io import fits
 from pickle import load
 from scipy import interpolate
 from tqdm import tqdm
+from cython.parallel cimport prange
 
 #--------------------------------- INPUTS -------------------------------------#
 home_dir = '/home/carterrhea/Documents/Benjamin'   # Location weights file
@@ -38,10 +39,10 @@ axis, spectrum = cube.extract_spectrum(1000, 1000, 1)
 min_ = np.argmin(np.abs(np.array(axis)-14400))
 max_ = np.argmin(np.abs(np.array(axis)-15700))
 # LOAD IN SPECTRAL INFORMATION
-x_min = 0
-x_max = cube.shape[0]
-y_min = 0
-y_max = cube.shape[1]
+cdef int x_min = 0
+cdef int x_max = cube.shape[0]
+cdef int y_min = 0
+cdef int y_max = cube.shape[1]
 # Now pull data
 dat = cube.get_data(x_min,x_max,y_min,y_max,min_,max_)
 # Open our nominal spectrum and get its wavenumbers
@@ -58,22 +59,24 @@ ct = 0
 vels = np.zeros((x_max, y_max))
 broads = np.zeros((x_max, y_max))
 start_time = time.time()
-for i in tqdm(range(x_max-x_min)):
-    for j in range(y_max-y_min):
-        counts = np.zeros((1,len(wavenumbers_syn)))
-        # Interpolate to get only points equivalent to what we have in our synthetic data
-        f = interpolate.interp1d(axis[min_:max_], dat[i,j], kind='slinear')
-        # Get fluxes of interest
-        coun = f(wavenumbers_syn)
-        max_con = np.max(coun)
-        coun = [con/max_con for con in coun]
-        counts[0] = coun
-        # Get into correct format for predictions
-        Spectrum = counts
-        Spectrum = Spectrum.reshape(1, Spectrum.shape[1], 1)
-        predictions = model.predict(Spectrum)
-        vels[i][j] = predictions[0][0]
-        broads[i][j] = predictions[0][1]
+cdef int i, j
+for i in tqdm(prange(x_max-x_min, nogil=True)):
+    with gil:
+        for j in range(y_max-y_min):
+            counts = np.zeros((1,len(wavenumbers_syn)))
+            # Interpolate to get only points equivalent to what we have in our synthetic data
+            f = interpolate.interp1d(axis[min_:max_], dat[i,j], kind='slinear')
+            # Get fluxes of interest
+            coun = f(wavenumbers_syn)
+            max_con = np.max(coun)
+            coun = [con/max_con for con in coun]
+            counts[0] = coun
+            # Get into correct format for predictions
+            Spectrum = counts
+            Spectrum = Spectrum.reshape(1, Spectrum.shape[1], 1)
+            predictions = model.predict(Spectrum)
+            vels[i][j] = predictions[0][0]
+            broads[i][j] = predictions[0][1]
 print(time.time()-start_time)
 
 # Save as Fits File
