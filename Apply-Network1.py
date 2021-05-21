@@ -54,26 +54,33 @@ spec_ref_axis = np.array(spec_ref_axis)[min_w:max_w]
 for i in range(len(spec_ref_axis)):
     wavenumbers_syn.append(spec_ref_axis[i])
 ct = 0
+# Interpolate background (sky) onto the correct axis
+f_sky = interpolate.interp1d(axis[min_:max_], sky[min_:max_], kind='slinear')
+sky_int = np.real(f_sky(wavenumbers_syn))
 # Create empty 2D numpy array corresponding to x/y pixels
 vels = np.zeros((x_max, y_max))
 broads = np.zeros((x_max, y_max))
 start_time = time.time()
 for i in tqdm(range(x_max-x_min)):
+    vels_local = []
+    broads_local = []
     for j in range(y_max-y_min):
         counts = np.zeros((1,len(wavenumbers_syn)))
         # Interpolate to get only points equivalent to what we have in our synthetic data
-        f = interpolate.interp1d(axis[min_:max_], dat[i,j], kind='slinear')
+        f = interpolate.interp1d(axis[min_:max_], np.real(dat[i,j]), kind='slinear')
         # Get fluxes of interest
-        coun = f(wavenumbers_syn)
+        coun = f(wavenumbers_syn) - sky_int
         max_con = np.max(coun)
         coun = [con/max_con for con in coun]
         counts[0] = coun
         # Get into correct format for predictions
         Spectrum = counts
         Spectrum = Spectrum.reshape(1, Spectrum.shape[1], 1)
-        predictions = model.predict(Spectrum)
-        vels[i][j] = predictions[0][0]
-        broads[i][j] = predictions[0][1]
+        predictions = model(Spectrum, training=False)
+        vels_local[j] = predictions[0][0]
+        broads_local[j] = predictions[0][1]
+    vels[i] = vels_local
+    broads[i] = broads_local
 print(time.time()-start_time)
 
 # Save as Fits File
