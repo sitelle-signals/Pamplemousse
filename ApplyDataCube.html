@@ -6,7 +6,7 @@
 <p>
   This example will guide you through the process of applying a pre-trained network (i.e. the weights have been trained),
   to a SITELLE data cube. This example will use the network trained to predict velocity and broadening values, therefore,
-  we will be applying this to an SN3 cube.
+  we will be applying this to an SN3 cube. The code can be found
 </p>
 <p>
   The code will read in a the network and a datacube. We will then step through each pixel in the datacube, extract the
@@ -20,6 +20,7 @@
     import numpy as np
     import matplotlib.pyplot as plt
     import time
+    import keras
     from keras.optimizers import Adam
     from keras.models import load_model
     from orcs.process import SpectralCube
@@ -41,13 +42,13 @@
     cube_name = 'cube_name'  # don't add .hdf5 extension
     output_dir = '/path/to/output'  # Path to output directory
     output_name = 'output_name'  # output file prefix
-    deep_file = '/full/path/to/deep/fits'  # Path to deep image fits file: required for header
+    deep_file = '/full/path/to/deep/fits'  # Path to deep image fits file: required for header -- do not include .fits
   </code>
 </pre>
 
 <p>
   Now we will load the model. In this case, we are loading the velocity and broadening predictor from the firs paper.
-  The model and weights are in the `SITELLE-PREDICTOR-I` repository.
+  The model and weights are in the `SITELLE-PREDICTOR-I` repository. Please replace this with the model you are using.
 </p>
 
 <pre>

@@ -18,18 +18,18 @@ from scipy import interpolate
 from tqdm import tqdm
 
 #--------------------------------- INPUTS -------------------------------------#
-home_dir = '/home/carterrhea/Documents/Benjamin'   # Location weights file
-cube_dir = '/home/carterrhea/Documents/Benjamin'  # Path to data cube
-cube_name = 'NGC1275-highres'  # don't add .hdf5 extension
-output_dir = '/home/carterrhea/Documents/Benjamin'  # Path to output directory
-output_name = 'HighRes'  # output file prefix
-deep_file = 'NGC1275_zoom_deep_frame'  # Path to deep image fits file: required for header -- don't include .fits extension
+home_dir = '/home/user'   # Location weights file
+cube_dir = '/home/user'  # Path to data cube
+cube_name = 'NGC1275'  # don't add .hdf5 extension
+output_dir = '/home/user'  # Path to output directory
+output_name = 'output'  # output file prefix
+deep_file = 'NGC1275_deep_frame'  # Path to deep image fits file: required for header -- don't include .fits extension
 #------------------------------------------------------------------------------#
 
 
 os.chdir(home_dir)
-
-model = keras.models.load_model('R7000-FULL')
+# Read in model and weights. A full list can be found in the PREDICTORS directory.
+model = keras.models.load_model('PREDICTORS/R5000-PREDICTOR-I')
 # Load cube
 cube = SpectralCube(cube_dir+'/'+cube_name+'.hdf5')
 # We first need to extract a random spectrum to get the x-axis (Wavenumbers) for the observation
@@ -58,8 +58,8 @@ ct = 0
 f_sky = interpolate.interp1d(axis[min_:max_], sky[min_:max_], kind='slinear')
 sky_int = np.real(f_sky(wavenumbers_syn))
 # Create empty 2D numpy array corresponding to x/y pixels
-vels = np.zeros((x_max, y_max))
-broads = np.zeros((x_max, y_max))
+vels = np.zeros((x_max-x_min, y_max-y_min))
+broads = np.zeros((x_max-x_min, y_max-y_min))
 start_time = time.time()
 for i in tqdm(range(x_max-x_min)):
     vels_local = []
