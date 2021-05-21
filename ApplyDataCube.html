@@ -11,7 +11,14 @@
 <p>
   The code will read in a the network and a datacube. We will then step through each pixel in the datacube, extract the
   spectrum, subtract the background, interpolate the background-subtracted spectrum onto the reference spectrum's x-axis,
-  and finally apply the network to extract the velocity and broadening parameters. Let's start with our imports -- I apologize
+  and finally apply the network to extract the velocity and broadening parameters.
+
+  You can find information on our pretrained networks at <a href="NetworkLibrary.html">Network Library</a>.
+  These are also available on our github page at
+  <a href="https://github.com/sitelle-signals/Pamplemousse/tree/master/PREDICTORS">https://github.com/sitelle-signals/Pamplemousse/tree/master/PREDICTORS</a>.
+
+
+  Let's start with our imports -- I apologize
   for all of them!
 </p>
 <pre class="line-numbers">
@@ -53,7 +60,7 @@
 
 <pre>
   <code class="language-python">
-    model = keras.models.load_model('SITELLE-PREDICTOR-I')
+    model = keras.models.load_model('PREDICTORS/R5000-PREDICTOR-I')
   </code>
 </pre>
 
