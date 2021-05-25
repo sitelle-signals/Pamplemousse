@@ -47,7 +47,6 @@
     theta_num = 100  # Number of Theta Values Sampled
     num_syn = 1000  # Number of Synthetic Spectra
     SNR = 50  # Define SNR
-
     # Sample velocity
     vel_ = np.random.uniform(-200,200,vel_num)
     # Sample broadening
@@ -145,7 +144,7 @@
         spectrum += orb.fit.create_cm1_lines_model([SII6731_cm1], [sim_vals['s2']/sim_vals['h1']],
                                                   step, order, resolution, theta, fmodel='sincgauss',
                                                   sigma=broadening, vel=velocity)
-        # We now add noise
+        # We now add noise with our predefined SNR
         spectrum += np.random.normal(0.0,1/SNR,spectrum.shape)
         # Get the axis
         spectrum_axis = orb.utils.spectrum.create_cm1_axis(np.size(spectrum), step, order, corr=axis_corr)
@@ -182,3 +181,5 @@ I have included what an optimal spectrum looks like below.
 <figure>
     <img src="example_spectrum.png">
 </figure>
+
+
