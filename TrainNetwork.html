@@ -1,0 +1,243 @@
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.23.0/themes/prism.min.css" integrity="sha512-tN7Ec6zAFaVSG3TpNAKtk4DOHNpSwKHxxrsiw4GHKESGPs5njn/0sMCUMl2svV4wo4BK/rCP7juYz+zx+l6oeQ==" crossorigin="anonymous" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.23.0/prism.min.js" integrity="sha512-YBk7HhgDZvBxmtOfUdvX0z8IH2d10Hp3aEygaMNhtF8fSOvBZ16D/1bXZTJV6ndk/L/DlXxYStP8jrF77v2MIg==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.23.0/components/prism-python.min.js" integrity="sha512-wK9tQmDrstGtZqTKcyVf3h457QGMlNriKs+fHmEkiCizrq0LVovfT3v1smeT1DlQetHhdRkkX1JSuZg5LoNHJg==" crossorigin="anonymous"></script>
+
+
+<p>
+  In this section, we will describe how to read in the synthetic spectra we previously created and how to use them to
+    train a neural network. I will not be discussing neural networks nor convolutional neural networks in this tutorial.
+    Instead, I suggest the reader either check out our papers or checkout out some articles on
+    <a href="https://medium.com/topic/machine-learning">Medium</a>.
+</p>
+
+<p>
+  Let's do some imports.
+</p>
+
+<pre>
+  <code class="language-python">
+    # Imports
+    import matplotlib.pyplot as plt
+    from astropy.io import fits
+    import tensorflow as tf
+    from keras.backend import clear_session
+    from keras.models import Sequential
+    from keras.layers import Dense, InputLayer, Flatten, Dropout
+    from keras.layers.convolutional import Conv1D
+    from keras.layers.convolutional import MaxPooling1D
+    from keras.optimizers import Adam
+    from keras.callbacks import EarlyStopping, ReduceLROnPlateau
+    import numpy as np
+    from keras.backend import clear_session
+  </code>
+</pre>
+
+<p>
+    We quickly set the number of synthetic spectra and the output directory.
+</p>
+
+<pre>
+    <code class="language-python">
+        # Set Input Parameters
+        output_dir = '/home/carterrhea/Desktop/Test/'  # Include trailing /
+        syn_num = 1000  # Number of Synthetic Data
+    </code>
+</pre>
+
+<p>
+  We now can read in the synthetic spectra we created including the reference spectrum.
+</p>
+
+<pre>
+    <code class="language-python">
+        spec98_ = fits.open('Reference-Spectrum.fits')[1].data
+        channel = []
+        counts = []
+        for chan in spec98_:
+            channel.append(chan[0])
+            counts.append(chan[1])
+        min_ = np.argmin(np.abs(np.array(channel)-14500))  # note that we cut the values a bit more than we did during the creation of the synthetic data
+        max_ = np.argmin(np.abs(np.array(channel)-15600))  # We do this to make sure all values are within the range and to avoid any extrapolation!
+        wavenumbers_syn = channel[min_:max_]
+
+
+        # Read in Fits -- This is not particularly fast :S  -- you could always pickle instead :D
+        Counts = []  # List containing the spectra
+        Param_dict = {}  # {spectrum_ct: [velocity, broadening]}
+        for spec_ct in range(syn_num):
+            spectrum = fits.open(output_dir+'Spectrum_%i.fits'%spec_ct)
+            header = spectrum[0].header
+            spec = spectrum[1].data
+            channel = []
+            counts = []
+            for chan in spec:  # Only want SN3 region
+                channel.append(chan[0])
+                counts.append(chan[1])
+            # We need to find the min and max wavenumber that match our min/max from our synthetic spectra
+            # We go a bit further on either end for safety during the interpolation (so we don't need any extrapolation)
+            min_ = np.argmin(np.abs(np.array(channel)-14400))
+            max_ = np.argmin(np.abs(np.array(channel)-15700))
+            f = interpolate.interp1d(channel[min_:max_], counts[min_:max_], kind='slinear')  # interpolate using a linear spline
+            # Get fluxes of interest
+            coun = f(wavenumbers_syn)
+            Counts.append(coun)
+            Param_dict[spec_ct] = [header['VELOCITY'], header['BROADEN']]  # Save velocity and broadening
+        vel_spec = [val[0] for val in list(Param_dict.values())]  # Read velocity into list
+        broad_spec = [val[1] for val in list(Param_dict.values())]  # Read broadening into list
+    </code>
+</pre>
+
+<p>
+    We can now define the machine learning algorithm we are going to use. This is further discussed in our
+    <a href="https://arxiv.org/abs/2008.08093">first paper</a>
+</p>
+
+
+<pre>
+    <code class="language-python">
+        activation = 'relu'  # activation function
+        initializer = 'he_normal'  # model initializer
+        input_shape = (None, len(Counts[0]), 1)  # shape of input spectra for the input layer
+        num_filters = [4,16]  # number of filters in the convolutional layers
+        filter_length = [8,4]  # length of the filters
+        pool_length = 2  # length of the maxpooling
+        num_hidden = [256,128]  # number of nodes in the hidden layers
+        batch_size = 2  # number of data fed into model at once
+        max_epochs = 25  # maximum number of interations
+        lr = 0.0007  # initial learning rate
+        beta_1 = 0.9  # exponential decay rate  - 1st
+        beta_2 = 0.999  # exponential decay rate  - 2nd
+        optimizer_epsilon = 1e-08  # For the numerical stability
+        early_stopping_min_delta = 0.0001
+        early_stopping_patience = 4
+        reduce_lr_factor = 0.5
+        reuce_lr_epsilon = 0.009
+        reduce_lr_patience = 2
+        reduce_lr_min = 0.00008
+        loss_function = 'mean_squared_error'
+        metrics_ = ['accuracy', 'mae']
+        # Clear session for sanity :)
+        clear_session()
+        model = Sequential([
+            InputLayer(batch_input_shape=input_shape),
+            Conv1D(kernel_initializer=initializer, activation=activation, padding="same", filters=num_filters[0], kernel_size=filter_length[0]),
+            Conv1D(kernel_initializer=initializer, activation=activation, padding="same", filters=num_filters[1], kernel_size=filter_length[1]),
+            MaxPooling1D(pool_size=pool_length),
+            Flatten(),
+            Dropout(0.2),
+            Dense(units=num_hidden[0], kernel_initializer=initializer, activation=activation),
+            Dense(units=num_hidden[1], kernel_initializer=initializer, activation=activation),
+            Dense(2),
+        ])
+        # Set optimizer
+        optimizer = Adam(lr=lr, beta_1=beta_1, beta_2=beta_2, epsilon=optimizer_epsilon, decay=0.0)
+        # Set early stopping conditions
+        early_stopping = EarlyStopping(monitor='val_loss', min_delta=early_stopping_min_delta,
+                                               patience=early_stopping_patience, verbose=2, mode='min')
+        # Set learn rate reduction conditions
+        reduce_lr = ReduceLROnPlateau(monitor='loss', factor=0.5, epsilon=reuce_lr_epsilon,
+                                          patience=reduce_lr_patience, min_lr=reduce_lr_min, mode='min', verbose=2)
+        # Compile CNN
+        model.compile(optimizer=optimizer, loss=loss_function, metrics=metrics_)
+    </code>
+</pre>
+
+
+<p>
+    With our compiled model, we can now train and validate it.
+</p>
+
+<pre>
+    <code class="language-python">
+        syn_num_pass = len(Counts)
+        # Create divisions
+        train_div = int(0.7*syn_num_pass)  # Percent of synthetic data to use as training
+        valid_div = int(0.9*syn_num_pass)  # Percent of synthetic data to use as validation
+        test_div = int(1.0*syn_num_pass)  # Percent of synthetic data to use as testing
+        # Set training set
+        TraningSet = np.array(Counts[:train_div])
+        TraningSet = TraningSet.reshape(TraningSet.shape[0], TraningSet.shape[1], 1)
+        Traning_init_labels = np.array((vel_spec[0:train_div], broad_spec[0:train_div])).T
+        # Set validation set
+        ValidSet = np.array(Counts[train_div:valid_div])
+        ValidSet = ValidSet.reshape(ValidSet.shape[0], ValidSet.shape[1], 1)
+        Valid_init_labels = np.array((vel_spec[train_div:valid_div], broad_spec[train_div:valid_div])).T
+        # Train network
+        model.fit(TraningSet, Traning_init_labels, validation_data=(ValidSet, Valid_init_labels),
+              epochs=10, verbose=2, callbacks=[reduce_lr,early_stopping])
+        # Save model and print out summary of model
+        model.save('CNN_trained.h5')
+        model.summary()
+    </code>
+</pre>
+
+<p>
+    Woohoo! Our network has been trained! We can now test it and verify that it works.
+</p>
+
+<pre>
+    <code class="language-python">
+        # Apply on test test
+        TestSet = np.array(Counts[valid_div:test_div])
+        TestSet = TestSet.reshape(TestSet.shape[0], TestSet.shape[1], 1)
+        TestSetLabels = np.array((vel_spec[valid_div:test_div], broad_spec[valid_div:test_div])).T
+        test_predictions = model.predict(TestSet)
+    </code>
+</pre>
+
+
+<p>
+    And let's now take a quick look at the density plots for the velocity and broadening.
+</p>
+
+
+<pre>
+    <code class="language-python">
+        # Velocity
+        # Calculate the errors
+        vel_error = [(TestSetLabels[i,0]-test_predictions[i,0]) for i in range(len(test_predictions))]
+        # Calculate the point density
+        x = TestSetLabels[:,0]
+        y = vel_error
+        xy = np.vstack([x,y])
+        z = gaussian_kde(xy)(xy)
+        # Plots
+        plt.scatter(x, y, c=z, s=5, edgecolor='')
+        plt.xlabel('Velocity (km/s)', fontsize = 20, fontweight='bold')
+        plt.ylabel('Residual (km/s)', fontsize = 15, fontweight='bold')
+        cbar = plt.colorbar(extend='both')
+        cbar.set_label('Density', rotation=270, labelpad=10)
+        plt.ylim(-50,50)
+        # Save
+        plt.savefig('Vel_Residual.png')
+
+        # Broadening
+        broad_x = [TestSetLabels[i,1] for i in range(len(test_predictions))]
+        vel_error = [(TestSetLabels[i,0]-test_predictions[i,0]) for i in range(len(test_predictions))]
+        # Calculate the point density
+        x = broad_x
+        y = vel_error
+        xy = np.vstack([x,y])
+        z = gaussian_kde(xy)(xy)
+        # Plot
+        plt.scatter(x, y, c=z, s=20, edgecolor='')
+        plt.xlabel('Broadening (km/s)', fontsize = 20, fontweight='bold')
+        plt.ylabel('Residual (km/s)', fontsize = 15, fontweight='bold')
+        cbar = plt.colorbar(extend='both')
+        cbar.set_label('Density', rotation=270, labelpad=10)
+        plt.savefig('Broad_Residual.png')
+    </code>
+</pre>
+
+We can see what they look like (on a tiny dataset) below.
+<figure>
+    <img class="w-50" src="images/Vel.png">
+</figure>
+<figure>
+    <img class="w-50" src="images/Broad.png">
+</figure>
+
+<p>
+    Even with this tiny test set we can see that the results cluster at a residual equal to zero for all true values :)
+</p>
+
