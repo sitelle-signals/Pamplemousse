@@ -6,12 +6,16 @@
 <p>
   This example will guide you through the process of applying a pre-trained network (i.e. the weights have been trained),
   to a SITELLE data cube. This example will use the network trained to predict velocity and broadening values, therefore,
-  we will be applying this to an SN3 cube. The code can be found
+  we will be applying this to an SN3 cube. The code can be found in the
+  <a href="https://github.com/sitelle-signals/Pamplemousse/blob/master/Apply-Network1.py">Apply-Network1.py</a>
 </p>
 <p>
   The code will read in a the network and a datacube. We will then step through each pixel in the datacube, extract the
   spectrum, subtract the background, interpolate the background-subtracted spectrum onto the reference spectrum's x-axis,
   and finally apply the network to extract the velocity and broadening parameters.
+
+  NOTE: THESE ARE NOT THE ONLY STEPS! TO GET THE CORRECT VALUES YOU MUST ALSO ADD THE SKY VELOCITY
+  WHICH CAN BE OBTAINED BY ORCS (<a href="https://orcs.readthedocs.io/en/latest/script_example_wavelength_calibration.html">here</a>).
 
   You can find information on our pretrained networks at <a href="NetworkLibrary.html">Network Library</a>.
   These are also available on our github page at
