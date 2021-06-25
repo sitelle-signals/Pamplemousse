@@ -94,12 +94,6 @@
     spec_ref_axis = [val[0] for val in ref_spec[1].data]
     min_w = np.argmin(np.abs(np.array(spec_ref_axis)-14700))  # For intepolation purposes
     max_w =np.argmin(np.abs(np.array(spec_ref_axis)-15600))
-    x_min = 0
-    x_max = cube.shape[0]
-    y_min = 0
-    y_max = cube.shape[1]
-    # Now pull data
-    dat = cube.get_data(x_min,x_max,y_min,y_max,min_,max_)
     spec_ref_axis = np.array(spec_ref_axis)[min_w:max_w]
     for i in range(len(spec_ref_axis)):
         wavenumbers_syn.append(spec_ref_axis[i])
@@ -121,12 +115,14 @@
     broads = np.zeros((x_max, y_max))
     start_time = time.time()
     for i in tqdm(range(x_max-x_min)):
+        x_pix = x_max + i
         vels_local = []
         broads_local = []
         for j in range(y_max-y_min):
+            y_pix = y_min + j
             counts = np.zeros((1,len(wavenumbers_syn)))
             # Interpolate to get only points equivalent to what we have in our synthetic data
-            f = interpolate.interp1d(axis[min_:max_], np.real(dat[i,j]), kind='slinear')
+            f = interpolate.interp1d(axis[min_:max_], np.real(dat[x_pix,y_pix]), kind='slinear')
             # Get fluxes of interest
             coun = f(wavenumbers_syn) - sky_int
             max_con = np.max(coun)

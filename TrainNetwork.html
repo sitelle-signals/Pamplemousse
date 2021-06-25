@@ -56,7 +56,7 @@
         for chan in spec98_:
             channel.append(chan[0])
             counts.append(chan[1])
-        min_ = np.argmin(np.abs(np.array(channel)-14500))  # note that we cut the values a bit more than we did during the creation of the synthetic data
+        min_ = np.argmin(np.abs(np.array(channel)-14700))  # note that we cut the values a bit more than we did during the creation of the synthetic data
         max_ = np.argmin(np.abs(np.array(channel)-15600))  # We do this to make sure all values are within the range and to avoid any extrapolation!
         wavenumbers_syn = channel[min_:max_]
 
@@ -240,4 +240,3 @@ We can see what they look like (on a tiny dataset) below.
 <p>
     Even with this tiny test set we can see that the results cluster at a residual equal to zero for all true values :)
 </p>
-
