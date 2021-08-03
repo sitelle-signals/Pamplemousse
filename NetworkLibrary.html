@@ -20,7 +20,14 @@
     $(function(){
       $("#includedContent").load("navigation.html");
     });
+    $(function(){
+      $("#includedSN3Library").load("SN3-Library.html");
+    });
+    $(function(){
+      $("#includedSN1Library").load("SN1-Library.html");
+    });
     </script>
+
 
   <div id="includedContent"></div>
 
@@ -41,9 +48,8 @@
           <p>
             For each set of data in the library, we created 50,000 synthetic SITELLE spectra using the formulation described
             in the <b>Create Synthetic Data</b> example of varying resolutions. The velocity was uniformly sampled from
-            a distribution ranging from -200 km/s to 500 km/s. The broadening values were uniformly sampled from a distribution
-            ranging from 10 km/s to 200 km/s. We created pre-trained networks for the following resolutions: 2000, 2500, 3000,
-            3500, 4000, 4500, 5000, and 7000. Each section contains a pickle file containing the spectra used, the saved
+            a distribution ranging from -500 km/s to 500 km/s. The broadening values were uniformly sampled from a distribution
+            ranging from 10 km/s to 200 km/s. Each section contains a pickle file containing the spectra used, the saved
             CNN model, an image of the reference spectrum, and statistics on the accuracy of the method on the test set.
 
             Click on the <i class="fas fa-download text-info"></i> icon to download the pre-trained CNN.
@@ -58,268 +64,26 @@
       </div>
     </div>
 
-    <div class="row mt-5 mb-5">
-        <div class="col-12">
-          <div class="card">
-            <div class="card-header">
-              <div class="row">
-                <h4 class="ml-5">R~2000</h4>
-                <div class="ml-auto">
-                  <a href="PREDICTORS/R2000-PREDICTOR-I.zip" download="R2000-PREDICTOR-I">
-                  <i class="fas fa-download mr-5 text-info"></i>
-                  </a>
-                </div>
-              </div>
-            </div>
-            <div class="card-body">
-              <div class="row">
-                <div class="col-4">
-                  <figure>
-                    <img src="images/2000.png" class="w-100" style="margin-top: 8rem">
-                  </figure>
-                </div>
-                <div class="col-8">
-                  <div class="row">
-                    <div class="col mini-box"><img src="images/velocity_KDE_R2000.png" class="w-75"></div>
-                    <div class="col mini-box"><img src="images/Velocity_dist_R2000.png" class="w-75"></div>
-                  </div>
-                  <div class="row">
-                    <div class="col mini-box"><img src="images/broadening_KDE_R2000.png" class="w-75"></div>
-                    <div class="col mini-box"><img src="images/Broad_dist_R2000.png" class="w-75"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-    </div>
+    <ul class="nav nav-tabs">
+      <li class="nav-item"><a data-toggle="tab" class="nav-link active" href="#sn3-library">SN3</a></li>
+      <li class="nav-item"><a data-toggle="tab" class="nav-link" href="#sn1-library">SN1</a></li>
+    </ul>
 
+    <div class="tab-content">
 
-    <div class="row mt-5 mb-5">
-      <div class="col-12">
-        <div class="card">
-          <div class="card-header">
-            <div class="row">
-              <h4 class="ml-5">R~2500</h4>
-              <div class="ml-auto">
-                <a href="/PREDICTORS/R2500-PREDICTOR-I.zip" download="R2500-PREDICTOR-I">
-                  <i class="fas fa-download mr-5 text-info"></i>
-                </a>
-              </div>
-            </div>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-4">
-                <figure>
-                  <img src="images/2500.png" class="w-100" style="margin-top: 8rem">
-                </figure>
-              </div>
-              <div class="col-8">
-                <div class="row">
-                  <div class="col mini-box"><img src="images/velocity_KDE_R2500.png" class="w-75"></div>
-                  <div class="col mini-box"><img src="images/Velocity_dist_R2500.png" class="w-75"></div>
-                </div>
-                <div class="row">
-                  <div class="col mini-box"><img src="images/broadening_KDE_R2500.png" class="w-75"></div>
-                  <div class="col mini-box"><img src="images/Broad_dist_R2500.png" class="w-75"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div id="sn3-library" class="tab-pane container active">
+        <p class="mt-2">We created pre-trained networks for the following resolutions: 2000, 2500, 3000,
+          3500, 4000, 4500, 5000, and 7000</p>
+        <div id="includedSN3Library"></div>
       </div>
-    </div>
-
-
-
-    <div class="row mt-5 mb-5">
-      <div class="col-12">
-        <div class="card">
-          <div class="card-header">
-            <div class="row">
-              <h4 class="ml-5">R~3000</h4>
-              <div class="ml-auto">
-                <a href="/PREDICTORS/R3000-PREDICTOR-I.zip" download="R3000-PREDICTOR-I">
-                  <i class="fas fa-download mr-5 text-info"></i>
-                </a>
-              </div>
-            </div>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-4">
-                <figure>
-                  <img src="images/3000.png" class="w-100" style="margin-top: 8rem">
-                </figure>
-              </div>
-              <div class="col-8">
-                <div class="row">
-                  <div class="col mini-box"><img src="images/velocity_KDE_R3000.png" class="w-75"></div>
-                  <div class="col mini-box"><img src="images/Velocity_dist_R3000.png" class="w-75"></div>
-                </div>
-                <div class="row">
-                  <div class="col mini-box"><img src="images/broadening_KDE_R3000.png" class="w-75"></div>
-                  <div class="col mini-box"><img src="images/Broad_dist_R3000.png" class="w-75"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div id="sn1-library" class="tab-pane container fade">
+        <p class="mt-2">We created pre-trained networks for the following resolutions: 600, 700, 800, 900,
+          1000, and 1800.</p>
+        <div id="includedSN1Library"></div>
       </div>
+
     </div>
 
-
-
-    <div class="row mt-5 mb-5">
-      <div class="col-12">
-        <div class="card">
-          <div class="card-header">
-            <div class="row">
-              <h4 class="ml-5">R~3500</h4>
-              <div class="ml-auto">
-                <a href="/PREDICTORS/R3500-PREDICTOR-I.zip" download="R3500-PREDICTOR-I">
-                  <i class="fas fa-download mr-5 text-info"></i>
-                </a>
-              </div>
-            </div>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-4">
-                <figure>
-                  <img src="images/3500.png" class="w-100" style="margin-top: 8rem">
-                </figure>
-              </div>
-              <div class="col-8">
-                <div class="row">
-                  <div class="col mini-box"><img src="images/velocity_KDE_R3500.png" class="w-75"></div>
-                  <div class="col mini-box"><img src="images/Velocity_dist_R3500.png" class="w-75"></div>
-                </div>
-                <div class="row">
-                  <div class="col mini-box"><img src="images/broadening_KDE_R3500.png" class="w-75"></div>
-                  <div class="col mini-box"><img src="images/Broad_dist_R3500.png" class="w-75"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-
-    <div class="row mt-5 mb-5">
-      <div class="col-12">
-        <div class="card">
-          <div class="card-header">
-            <div class="row">
-              <h4 class="ml-5">R~4000</h4>
-              <div class="ml-auto">
-                <a href="/PREDICTORS/R4000-PREDICTOR-I.zip" download="R4000-PREDICTOR-I">
-                  <i class="fas fa-download mr-5 text-info"></i>
-                </a>
-              </div>
-            </div>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-4">
-                <figure>
-                  <img src="images/4000.png" class="w-100" style="margin-top: 8rem">
-                </figure>
-              </div>
-              <div class="col-8">
-                <div class="row">
-                  <div class="col mini-box"><img src="images/velocity_KDE_R4000.png" class="w-75"></div>
-                  <div class="col mini-box"><img src="images/Velocity_dist_R4000.png" class="w-75"></div>
-                </div>
-                <div class="row">
-                  <div class="col mini-box"><img src="images/broadening_KDE_R4000.png" class="w-75"></div>
-                  <div class="col mini-box"><img src="images/Broad_dist_R4000.png" class="w-75"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-
-    <div class="row mt-5 mb-5">
-      <div class="col-12">
-        <div class="card">
-          <div class="card-header">
-            <div class="row">
-              <h4 class="ml-5">R~4500</h4>
-              <div class="ml-auto">
-                <a href="/PREDICTORS/R4500-PREDICTOR-I.zip" download="R4500-PREDICTOR-I">
-                  <i class="fas fa-download mr-5 text-info"></i>
-                </a>
-              </div>
-            </div>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-4">
-                <figure>
-                  <img src="images/4500.png" class="w-100" style="margin-top: 8rem">
-                </figure>
-              </div>
-              <div class="col-8">
-                <div class="row">
-                  <div class="col mini-box"><img src="images/velocity_KDE_R4500.png" class="w-75"></div>
-                  <div class="col mini-box"><img src="images/Velocity_dist_R4500.png" class="w-75"></div>
-                </div>
-                <div class="row">
-                  <div class="col mini-box"><img src="images/broadening_KDE_R4500.png" class="w-75"></div>
-                  <div class="col mini-box"><img src="images/Broad_dist_R4500.png" class="w-75"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-
-
-    <div class="row mt-5 mb-5">
-      <div class="col-12">
-        <div class="card">
-          <div class="card-header">
-            <div class="row">
-              <h4 class="ml-5">R~5000</h4>
-              <div class="ml-auto">
-                <a href="/PREDICTORS/R5000-PREDICTOR-I.zip" download="R5000-PREDICTOR-I">
-                  <i class="fas fa-download mr-5 text-info"></i>
-                </a>
-              </div>
-            </div>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-4">
-                <figure>
-                  <img src="images/5000.png" class="w-100" style="margin-top: 8rem">
-                </figure>
-              </div>
-              <div class="col-8">
-                <div class="row">
-                  <div class="col mini-box"><img src="images/velocity_KDE_R5000.png" class="w-75"></div>
-                  <div class="col mini-box"><img src="images/Velocity_dist_R5000.png" class="w-75"></div>
-                </div>
-                <div class="row">
-                  <div class="col mini-box"><img src="images/broadening_KDE_R5000.png" class="w-75"></div>
-                  <div class="col mini-box"><img src="images/Broad_dist_R5000.png" class="w-75"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
 
 
 
