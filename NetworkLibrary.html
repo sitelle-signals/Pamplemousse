@@ -24,6 +24,9 @@
       $("#includedSN3Library").load("SN3-Library.html");
     });
     $(function(){
+      $("#includedSN2Library").load("SN2-Library.html");
+    });
+    $(function(){
       $("#includedSN1Library").load("SN1-Library.html");
     });
     </script>
@@ -66,6 +69,7 @@
 
     <ul class="nav nav-tabs">
       <li class="nav-item"><a data-toggle="tab" class="nav-link active" href="#sn3-library">SN3</a></li>
+      <li class="nav-item"><a data-toggle="tab" class="nav-link" href="#sn2-library">SN2</a></li>
       <li class="nav-item"><a data-toggle="tab" class="nav-link" href="#sn1-library">SN1</a></li>
     </ul>
 
@@ -75,6 +79,11 @@
         <p class="mt-2">We created pre-trained networks for the following resolutions: 2000, 2500, 3000,
           3500, 4000, 4500, 5000, and 7000</p>
         <div id="includedSN3Library"></div>
+      </div>
+      <div id="sn2-library" class="tab-pane container fade">
+        <p class="mt-2">We created pre-trained networks for the following resolutions: 600, 700, 800, 900,
+          1000, and 1800.</p>
+        <div id="includedSN2Library"></div>
       </div>
       <div id="sn1-library" class="tab-pane container fade">
         <p class="mt-2">We created pre-trained networks for the following resolutions: 600, 700, 800, 900,
