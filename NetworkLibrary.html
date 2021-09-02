@@ -39,11 +39,13 @@
             What were these networks trained on?
           </h3>
           <p>
-            For each set of data in the library, we created 50,000 synthetic SITELLE spectra using the formulation described
+            For each set of data in the library, we created 30,000 synthetic SITELLE spectra using the formulation described
             in the <b>Create Synthetic Data</b> example of varying resolutions. The velocity was uniformly sampled from
-            a distribution ranging from -200 km/s to 500 km/s. The broadening values were uniformly sampled from a distribution
+            a distribution ranging from -500 km/s to 500 km/s. The broadening values were uniformly sampled from a distribution
             ranging from 10 km/s to 200 km/s. We created pre-trained networks for the following resolutions: 2000, 2500, 3000,
-            3500, 4000, 4500, 5000, and 7000. Each section contains a pickle file containing the spectra used, the saved
+            3500, 4000, 4500, 5000. The signal-to-noise (SNR) was randomly sampled for each synthetic spectrum from a uniform distribution
+            between 3 and 50. The SNR is defined with respect to the Halpha emission line.
+            Each section contains a pickle file containing the spectra used, the saved
             CNN model, an image of the reference spectrum, and statistics on the accuracy of the method on the test set.
 
             Click on the <i class="fas fa-download text-info"></i> icon to download the pre-trained CNN.
@@ -54,6 +56,10 @@
             Here are the files I used to create these pre-trained networks:
             <a href="Generate.py" download>Generate.py</a> &
             <a href="Train.py" download>Train.py</a>
+
+            <div class="alert alert-info" role="alert">
+              Additional resolutions can be found in the table at the bottom of the page (coming soon).
+            </div>
           </p>
       </div>
     </div>
