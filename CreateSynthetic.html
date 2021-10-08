@@ -6,7 +6,7 @@
 <p>
   In this demonstration, we will go through the steps to create synthetic data. Although we are only going to create a
   synthetic SN3 spectrum, this code can be easily changed to accommodate any lines present in the SITELLE filters.
-  Please note that this requires ORBS which can be installed via <a href="https://github.com/thomasorb/orb">https://github.com/thomasorb/orb</a>.
+  Please note that this requires LUCI which can be installed via <a href="https://github.com/crhea93/LUCI">https://github.com/crhea93/LUCI</a>.
   The environment also requires pandas, pymysql, numpy, and astropy. You can find a jupyter notebook version
   <a href="https://github.com/sitelle-signals/Pamplemousse/blob/master/1_Generate-Data.ipynb">here</a>.
 </p>
@@ -18,15 +18,15 @@
 <pre>
   <code class="language-python">
     # Imports
+    import sys
+    sys.path.insert(0, '/path/to/LUCI/')
+    from LuciBase import Luci
+    from LUCI.LuciSim import Spectrum
     from astropy.io import fits
-    from orb.core import Lines
     import pandas as pd
-    import pylab as pl
-    import numpy as np
     import datetime
-    import orb.fit
     import random
-    import pymysql
+    from scipy import interpolate
   </code>
 </pre>
 
@@ -62,12 +62,12 @@
 
 <pre>
   <code class="language-python">
-    # Now we need to get our emission lines of interest
-    halpha_cm1 = Lines().get_line_cm1('Halpha')
-    NII6548_cm1 = Lines().get_line_cm1('[NII]6548')
-    NII6583_cm1 = Lines().get_line_cm1('[NII]6583')
-    SII6716_cm1 = Lines().get_line_cm1('[SII]6716')
-    SII6731_cm1 = Lines().get_line_cm1('[SII]6731')
+      # Now we need to get our emission lines of interest
+      lines = ['Halpha', 'NII6583', 'NII6548', 'SII6716', 'SII6731']
+      # Set fitting function
+      fit_function = 'sincgauss'
+      # Set filter
+      filter_ = 'SN3'
   </code>
 </pre>
 
@@ -129,21 +129,9 @@
         sim_num = random.randint(0,len(ampls_filter)-1)
         sim_vals = ampls_filter.iloc[sim_num]
         # Now add all of the lines where the amplitudes are normalized to Halpha...
-        spectrum = orb.fit.create_cm1_lines_model([halpha_cm1], [sim_vals['h1']/sim_vals['h1']],
-                                                  step, order, resolution, theta, fmodel='sincgauss',
-                                                  sigma=broadening, vel=velocity)
-        spectrum += orb.fit.create_cm1_lines_model([NII6548_cm1], [sim_vals['n1']/sim_vals['h1']],
-                                                  step, order, resolution, theta, fmodel='sincgauss',
-                                                  sigma=broadening, vel=velocity)
-        spectrum += orb.fit.create_cm1_lines_model([NII6583_cm1], [sim_vals['n2']/sim_vals['h1']],
-                                                  step, order, resolution, theta, fmodel='sincgauss',
-                                                  sigma=broadening, vel=velocity)
-        spectrum += orb.fit.create_cm1_lines_model([SII6716_cm1], [sim_vals['s1']/sim_vals['h1']],
-                                                  step, order, resolution, theta, fmodel='sincgauss',
-                                                  sigma=broadening, vel=velocity)
-        spectrum += orb.fit.create_cm1_lines_model([SII6731_cm1], [sim_vals['s2']/sim_vals['h1']],
-                                                  step, order, resolution, theta, fmodel='sincgauss',
-                                                  sigma=broadening, vel=velocity)
+        # Now add all of the lines where the amplitudes are normalized to Halpha...
+        ampls = [sim_vals['h1']/sim_vals['h1'], sim_vals['n1']/sim_vals['h1'], sim_vals['n2']/sim_vals['h1'], sim_vals['s1']/sim_vals['h1'], sim_vals['s2']/sim_vals['h1']]
+        spectrum_axis, spectrum = Spectrum(lines, fit_function, ampls, velocity, broadening, filter_, resolution, SNR).create_spectrum()
         # We now add noise with our predefined SNR
         spectrum += np.random.normal(0.0,1/SNR,spectrum.shape)
         # Get the axis
@@ -181,5 +169,3 @@ I have included what an optimal spectrum looks like below.
 <figure>
     <img src="example_spectrum.png">
 </figure>
-
-

@@ -9,7 +9,7 @@ Since the initial creation of this repository, we have submitted two additional 
 
  The first of these (so the second in the series) was accepted to ApJ in 2021 and can be found at
  [https://arxiv.org/abs/2102.06230](https://arxiv.org/abs/2102.06230). The final paper in the series
- has been submitted to ApJ and will be posted on the arxiv once the paper is accepted.
+ has been accepted to ApJ and can be fouund at [https://arxiv.org/abs/2110.00569](https://arxiv.org/abs/2110.00569).
 
  We have added the notebooks required to use the networks developed in the two
  subsequent papers in the series.
