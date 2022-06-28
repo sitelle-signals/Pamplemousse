@@ -1,5 +1,7 @@
+import orb.fit
 import pylab as pl
 import numpy as np
+from orb.core import Lines
 import random
 from astropy.io import fits
 import datetime
@@ -7,46 +9,21 @@ import pymysql
 import os
 import pandas as pd
 import warnings
+from AmpToFlux import ampToFlux
 import scipy.special as ss
 warnings.filterwarnings("ignore")
 from astropy.io import fits
 import matplotlib.pyplot as pl
-import pickle
+import dill as pickle
 import numpy as np
 from joblib import Parallel, delayed
+from redden import *
 from tqdm import tqdm
 
+
 """
-Python routine to redden a spectra
+DEREDENNING: redden_line requires the first argument to be in angstroms so 1e7/wavenumber
 """
-from natastro import utils
-from natastro.pycasso2.reddening import calc_redlaw
-import numpy as np
-#-------------------------INPUTS-------------------------#
-#--------------------------------------------------------#
-
-def redden_tau(HaHb):
-    """
-    We apply redenning by calculate the Balmer decrement and using it in conjunction
-    with a redenning law.
-    F_0(lam) = F_obs(lam)*exp(tau_Lam)
-    haHb  -- Balmer Decrement
-    """
-    #Take Cardelli, Clayton & Mathis (1989) attenuation law with $R_V = 3.1$
-    qHb, qHa = calc_redlaw([4861, 6563], 'CCM', R_V=3.1)
-    B = 2.87  # Standard balmer decrement value
-    tauV = (qHb - qHa)**-1 * np.log(HaHb / B)
-    return tauV
-
-
-def redden_line(line, flux_init, tau):
-    line = 10*line  # nm -> Ang
-    q_l = calc_redlaw([line], 'CCM', R_V=3.1)[0]
-    tau_l = tau*q_l
-    flux_red = flux_init/np.exp(tau_l)
-    return flux_red
-
-
 # ------------------------------- FUNCTIONS --------------------------#
 """
 Calculate the Flux of an emission line for SITELLE given the amplitude, broadening,
@@ -57,37 +34,36 @@ def ampToFlux(ampl, broad, res, wvn):
     ampl - amplitude
     broad - broadening
     res - spectral resolution
-    wvn - wavenumber of emission line (nm)
+    wvn - wavenumber of emission line (cm^-1)
     """
     num = np.sqrt(2*np.pi)*ampl*broad
-    den = ss.erf((2*(1e7/wvn)*broad)/(1.20671*res))
+    den = ss.erf((2*wvn*broad)/(1.20671*res))
     flux = num/den
     return flux
 
 def fluxToAmp(flux, broad, res, wvn):
-    num = ss.erf((2*(1e7/wvn)*broad)/(1.20671*res))*flux
+    num = ss.erf((2*wvn*broad)/(1.20671*res))*flux
     den = np.sqrt(2*np.pi)*broad
     ampl = num/den
     return ampl
-
-line_dict = {'Halpha': 656.280, 'NII6583': 658.341, 'NII6548': 654.803,
-              'SII6716': 671.647, 'SII6731': 673.085, 'OII3726': 372.603,
-              'OII3729': 372.882, 'OIII4959': 495.891, 'OIII5007': 500.684,
-              'Hbeta': 486.133}
 # ------------------- IMPORTS -----------------------------------------#
 # Set Input Parameters
 name = '10k-red-broad'
 output_dir = '/home/carterrhea/Dropbox/CFHT/Analysis-Paper2/SyntheticData/'+name+'/'
 plot_dir = '/home/carterrhea/Dropbox/CFHT/Analysis-Paper2/SyntheticData/Plots/'+name+'/'
 # Set observation parameters
+step = 2943
+order = 8
 resolution_SN3 = 5000
 resolution_SN2 = 1000
 vel_num = 2000  # Number of Velocity Values Sampled
 broad_num = 1000  # Number of Broadening Values Sampled
+theta_num = 1  # Number of Theta Values Sampledr
 num_syn = 50000  # Number of Synthetic Spectra
-n_threads = 4  # Number of threads to use for computation
 #-----------------------------------------------------------------------------------#
 # Randomize values
+# Sample theta parameter
+thetas_ = np.random.uniform(11.96,11.96,theta_num)#11.8,19.6,theta_num)
 # Sample velocity
 vel_ = np.random.uniform(-200,200,vel_num)
 # Sample broadening
@@ -96,12 +72,17 @@ broad_ = np.random.uniform(10,50,broad_num)
 res_SN3 = np.random.uniform(resolution_SN3-200, resolution_SN3, 200)
 res_SN2 = np.random.uniform(resolution_SN2-100, resolution_SN2, 100)
 
-# Now we need to get our emission lines for each filter
-lines_sn3 = ['Halpha', 'NII6583', 'NII6548', 'SII6716', 'SII6731']
-lines_sn3 = ['OIII5007', 'OIII4959', 'Hbeta']
-lines_sn3 = ['OII3726', 'OII3729']
-# Set fitting function
-fit_function = 'sincgauss'
+# Now we need to get our emission lines
+halpha_cm1 = Lines().get_line_cm1('Halpha')
+NII6548_cm1 = Lines().get_line_cm1('[NII]6548')
+NII6583_cm1 = Lines().get_line_cm1('[NII]6583')
+SII6716_cm1 = Lines().get_line_cm1('[SII]6716')
+SII6731_cm1 = Lines().get_line_cm1('[SII]6731')
+OIII5007_cm1 = Lines().get_line_cm1('[OIII]5007')
+OIII4959_cm1 = Lines().get_line_cm1('[OIII]4959')
+OII3726_cm1 = Lines().get_line_cm1('[OII]3726')
+OII3729_cm1 = Lines().get_line_cm1('[OII]3729')
+hbeta_cm1 = Lines().get_line_cm1('Hbeta')
 print('# -- Connecting to 3MdB -- #')
 # We must alo get our flux values from 3mdb
 # First we load in the parameters needed to login to the sql database
@@ -155,6 +136,7 @@ print('# -- Starting Creation of Spectra -- #')
 ## We now can model the lines. For the moment, we will assume all lines have the same velocity and broadening
 # Do this for randomized combinations of vel_ and broad_
 ct = 0
+nm_laser = 543.5 # wavelength of the calibration laser, in fact it can be any real positive number (e.g. 1 is ok)
 #for spec_ct in range(num_syn):
 def create_spectrum(spec_ct, ampls, ampls_str):
     spectrum = None  # Intialize
@@ -164,6 +146,9 @@ def create_spectrum(spec_ct, ampls, ampls_str):
     broadening = random.choice(broad_)
     resolution_sn3 = random.choice(res_SN3)
     resolution_sn2 = random.choice(res_SN2)  # SN2 and SN1 since they have the same resoution
+    theta = 11.96#random.choice(thetas_)
+    axis_corr =  orb.utils.spectrum.theta2corr(theta)
+
     # Randomly Select a M3db simulation
     while pick_new:
         sim_num = random.randint(0,len(ampls)-1)
@@ -173,39 +158,91 @@ def create_spectrum(spec_ct, ampls, ampls_str):
         # Calculate tau value
         tauV = redden_tau(Balmer_dec)
         # Calculate Halpha redenned for comparisons
+        Ha_red_flux = redden_line(1e7/halpha_cm1, ampToFlux(sim_vals['ha'], broadening, resolution_sn3, halpha_cm1), tauV)
+        # Only pick simulation if the n1,n2,s1 and s2 lines are 12% that of Halpha -> SNR 3
+        # Must be checked verse redenned values!!! Otherwise lines will be lost in the noise!
+        pass_ct = 0  # Number of lines for which the criteria is meet
+        for line,name in zip([sim_vals['n2'],sim_vals['s1'],sim_vals['s2'],sim_vals['O2'], sim_vals['O2_2'],sim_vals['O3'],sim_vals['hb']],[NII6583_cm1, SII6716_cm1, SII6731_cm1, OII3726_cm1, OII3729_cm1, OIII5007_cm1, hbeta_cm1]):
+            if line in [sim_vals['n2'], sim_vals['s1'], sim_vals['s2']]:
+                line_reddened = redden_line(1e7/name, ampToFlux(line, broadening, resolution_sn3, name), tauV)
+            else:
+                line_reddened = redden_line(1e7/name, ampToFlux(line, broadening, resolution_sn2, name), tauV)
+            if line_reddened/Ha_red_flux > 0.12:  # If greater than 12%
+                pass_ct += 1  # Another line has passed
+            else:
+                break  # No need to check any others
+        if pass_ct == 7:  # If all lines and ratios pass
+            pick_new = False  # Don't loop!
 
-    # Calculate flux and line amplitudes for each line
-    Ha_red_flux = redden_line(line_dict['Halpha'], ampToFlux(sim_vals['ha'], broadening, resolution_sn3, line_dict['Halpha']), tauV)
-    Ha_red_ampl = fluxToAmp(Ha_red_flux, broadening, resolution_sn3, line_dict['Halpha'])
-    n1_red_flux = redden_line(line_dict['NII6548'], ampToFlux(sim_vals['n1'], broadening, resolution_sn3, line_dict['NII6548']), tauV)
-    n1_red_ampl = fluxToAmp(n1_red_flux, broadening, resolution_sn3, line_dict['NII6548'])
-    n2_red_flux = redden_line(line_dict['NII6583'], ampToFlux(sim_vals['n2'], broadening, resolution_sn3, line_dict['NII6583']), tauV)
-    n2_red_ampl = fluxToAmp(n2_red_flux, broadening, resolution_sn3, line_dict['NII6583'])
-    s1_red_flux = redden_line(line_dict['SII6716'], ampToFlux(sim_vals['s1'], broadening, resolution_sn3, line_dict['SII6716']), tauV)
-    s1_red_ampl = fluxToAmp(s1_red_flux, broadening, resolution_sn3, line_dict['SII6716'])
-    s2_red_flux = redden_line(line_dict['SII6731'], ampToFlux(sim_vals['s2'], broadening, resolution_sn3, line_dict['SII6731']), tauV)
-    s2_red_ampl = fluxToAmp(s2_red_flux, broadening, resolution_sn3, line_dict['SII6731'])
-    O2_red_flux = redden_line(line_dict['OII3726'], ampToFlux(sim_vals['O2'], broadening, resolution_sn2, line_dict['OII3726']), tauV)
-    O2_red_ampl = fluxToAmp(O2_red_flux, broadening, resolution_sn2, line_dict['OII3726'])
-    O2_2_red_flux = redden_line(line_dict['OII3729'], ampToFlux(sim_vals['O2_2'], broadening, resolution_sn2, line_dict['OII3729']), tauV)
-    O2_2_red_ampl = fluxToAmp(O2_2_red_flux, broadening, resolution_sn2, line_dict['OII3729'])
-    O3_red_flux = redden_line(line_dict['OIII5007'], ampToFlux(sim_vals['O3'], broadening, resolution_sn2, line_dict['OIII5007']), tauV)
-    O3_red_ampl = fluxToAmp(O3_red_flux, broadening, resolution_sn2, line_dict['OIII5007'])
-    O3_2_red_flux = redden_line(line_dict['OIII4959'], ampToFlux(sim_vals['O3_2'], broadening, resolution_sn2, line_dict['OIII4959']), tauV)
-    O3_2_red_ampl = fluxToAmp(O3_2_red_flux, broadening, resolution_sn2, line_dict['OIII4959'])
-    Hb_red_flux = redden_line(line_dict['Hbeta'], ampToFlux(sim_vals['hb'], broadening, resolution_sn2, line_dict['Hbeta']), tauV)
-    Hb_red_ampl = fluxToAmp(Hb_red_flux, broadening, resolution_sn2, line_dict['Hbeta'])
+    Ha_red_flux = redden_line(1e7/halpha_cm1, ampToFlux(sim_vals['ha'], broadening, resolution_sn3, halpha_cm1), tauV)
+    Ha_red_ampl = fluxToAmp(Ha_red_flux, broadening, resolution_sn3, halpha_cm1)
+    n1_red_flux = redden_line(1e7/NII6548_cm1, ampToFlux(sim_vals['n1'], broadening, resolution_sn3, NII6548_cm1), tauV)
+    n1_red_ampl = fluxToAmp(n1_red_flux, broadening, resolution_sn3, NII6548_cm1)
+    n2_red_flux = redden_line(1e7/NII6583_cm1, ampToFlux(sim_vals['n2'], broadening, resolution_sn3, NII6583_cm1), tauV)
+    n2_red_ampl = fluxToAmp(n2_red_flux, broadening, resolution_sn3, NII6583_cm1)
+    s1_red_flux = redden_line(1e7/SII6716_cm1, ampToFlux(sim_vals['s1'], broadening, resolution_sn3, SII6716_cm1), tauV)
+    s1_red_ampl = fluxToAmp(s1_red_flux, broadening, resolution_sn3, SII6716_cm1)
+    s2_red_flux = redden_line(1e7/SII6731_cm1, ampToFlux(sim_vals['s2'], broadening, resolution_sn3, SII6731_cm1), tauV)
+    s2_red_ampl = fluxToAmp(s2_red_flux, broadening, resolution_sn3, SII6731_cm1)
+    O2_red_flux = redden_line(1e7/OII3726_cm1, ampToFlux(sim_vals['O2'], broadening, resolution_sn2, OII3726_cm1), tauV)
+    O2_red_ampl = fluxToAmp(O2_red_flux, broadening, resolution_sn2, OII3726_cm1)
+    O2_2_red_flux = redden_line(1e7/OII3729_cm1, ampToFlux(sim_vals['O2_2'], broadening, resolution_sn2, OII3729_cm1), tauV)
+    O2_2_red_ampl = fluxToAmp(O2_2_red_flux, broadening, resolution_sn2, OII3729_cm1)
+    O3_red_flux = redden_line(1e7/OIII5007_cm1, ampToFlux(sim_vals['O3'], broadening, resolution_sn2, OIII5007_cm1), tauV)
+    O3_red_ampl = fluxToAmp(O3_red_flux, broadening, resolution_sn2, OIII5007_cm1)
+    O3_2_red_flux = redden_line(1e7/OIII4959_cm1, ampToFlux(sim_vals['O3_2'], broadening, resolution_sn2, OIII4959_cm1), tauV)
+    O3_2_red_ampl = fluxToAmp(O3_2_red_flux, broadening, resolution_sn2, OIII4959_cm1)
+    Hb_red_flux = redden_line(1e7/hbeta_cm1, ampToFlux(sim_vals['hb'], broadening, resolution_sn2, hbeta_cm1), tauV)
+    Hb_red_ampl = fluxToAmp(Hb_red_flux, broadening, resolution_sn2, hbeta_cm1)
+    # Now add all of the lines...
 
-    # We can now create all of the spectra
-    spectrum_axis_sn3, spectrum_sn3 = Spectrum(lines_sn3, fit_function,
-         [Ha_red_ampl, n2_red_ampl, n1_red_ampl, s1_red_ampl, s2_red_ampl],
-         velocity, broadening, 'SN3', resolution_sn3, SNR).create_spectrum()
-    spectrum_axis_sn2, spectrum_sn2 = Spectrum(lines_sn2, fit_function,
-         [O3_red_ampl, O3_2_red_ampl, Hb_red_ampl],
-         velocity, broadening, 'SN2', resolution_sn2, SNR).create_spectrum()
-    spectrum_axis_sn1, spectrum_sn1 = Spectrum(lines_sn1, fit_function,
-          [O2_red_ampl, O2_2_red_ampl],
-          velocity, broadening, 'SN1', resolution_sn2, SNR).create_spectrum()
+    Halpha_spec = orb.fit.create_cm1_lines_model([halpha_cm1], [Ha_red_ampl],
+                                              step, order, resolution_sn3, theta, fmodel='sincgauss',
+                                              sigma=broadening, vel=velocity)
+    n1_spec = orb.fit.create_cm1_lines_model([NII6548_cm1], [n1_red_ampl],
+                                              step, order, resolution_sn3, theta, fmodel='sincgauss',
+                                              sigma=broadening, vel=velocity)
+    n2_spec = orb.fit.create_cm1_lines_model([NII6583_cm1], [n2_red_ampl],
+                                              step, order, resolution_sn3, theta, fmodel='sincgauss',
+                                              sigma=broadening, vel=velocity)
+    s1_spec = orb.fit.create_cm1_lines_model([SII6716_cm1], [s1_red_ampl],
+                                              step, order, resolution_sn3, theta, fmodel='sincgauss',
+                                              sigma=broadening, vel=velocity)
+    s2_spec = orb.fit.create_cm1_lines_model([SII6731_cm1], [s2_red_ampl],
+                                              step, order, resolution_sn3, theta, fmodel='sincgauss',
+                                              sigma=broadening, vel=velocity)
+    OII_spec = orb.fit.create_cm1_lines_model([OII3726_cm1], [O2_red_ampl],
+                                              1647, order, resolution_sn2, theta, fmodel='sincgauss',
+                                              sigma=broadening, vel=velocity)
+    OII_2_spec = orb.fit.create_cm1_lines_model([OII3729_cm1], [O2_2_red_ampl],
+                                              1647, order, resolution_sn2, theta, fmodel='sincgauss',
+                                              sigma=broadening, vel=velocity)
+    OIII_spec = orb.fit.create_cm1_lines_model([OIII5007_cm1], [O3_red_ampl],
+                                              1680, 6, resolution_sn2, theta, fmodel='sincgauss',
+                                              sigma=broadening, vel=velocity)
+    OIII_2_spec = orb.fit.create_cm1_lines_model([OIII4959_cm1], [O3_2_red_ampl],
+                                              1680, 6, resolution_sn2, theta, fmodel='sincgauss',
+                                              sigma=broadening, vel=velocity)
+    Hbeta_spec = orb.fit.create_cm1_lines_model([hbeta_cm1], [Hb_red_ampl],
+                                              1680, 6, resolution_sn2, theta, fmodel='sincgauss',
+                                              sigma=broadening, vel=velocity)
+    # Let's add all of our components together
+    spectrum_SN3 = Halpha_spec + n1_spec + n2_spec + s1_spec + s2_spec
+    spectrum_SN2 = OIII_spec + OIII_2_spec + Hbeta_spec
+    spectrum_SN1 = OII_spec + OII_2_spec
+    # Normalize Spectrum Values to Halpha to add noise because we want the noise to be wrt Halpha
+    spec_max = np.max(spectrum_SN3)
+    spectrum_SN3 = np.array([spec_/spec_max for spec_ in spectrum_SN3])
+    spectrum_SN2 = np.array([spec_/spec_max for spec_ in spectrum_SN2])
+    spectrum_SN1 = np.array([spec_/spec_max for spec_ in spectrum_SN1])
+    # We now add noise
+    SNR = np.random.uniform(5,30)
+    spectrum_SN3 += np.random.normal(0.0,1.0/SNR,spectrum_SN3.shape)
+    spectrum_SN2 += np.random.normal(0.0,1.0/SNR,spectrum_SN2.shape)
+    spectrum_SN1 += np.random.normal(0.0,1.0/SNR,spectrum_SN1.shape)
+    spectrum_axis_SN3 = orb.utils.spectrum.create_cm1_axis(np.size(spectrum_SN3), step, order, corr=axis_corr)
+    spectrum_axis_SN2 = orb.utils.spectrum.create_cm1_axis(np.size(spectrum_SN2), 1680, 6, corr=axis_corr)
+    spectrum_axis_SN1 = orb.utils.spectrum.create_cm1_axis(np.size(spectrum_SN1), 1647, order, corr=axis_corr)
 
     # Now normalize to the max value. This must be done for later comparison with real data
     # Since we are normalizing the spectra to the max value
@@ -215,6 +252,15 @@ def create_spectrum(spec_ct, ampls, ampls_str):
     spectrum_SN3 = np.array([spec_/spec_max for spec_ in spectrum_SN3])
     spectrum_SN2 = np.array([spec_/spec_max for spec_ in spectrum_SN2])
     spectrum_SN1 = np.array([spec_/spec_max for spec_ in spectrum_SN1])
+
+    # Correct flux for each filter
+    #for ct,wl in enumerate(spectrum_axis_SN1):
+    #    spectrum_SN1[ct] = redden_line(1e7/wl, spectrum_SN1[ct], tauV)
+    #for ct,wl in enumerate(spectrum_axis_SN2):
+    #    spectrum_SN2[ct] = redden_line(1e7/wl, spectrum_SN2[ct], tauV)
+    #for ct,wl in enumerate(spectrum_axis_SN3):
+    #    spectrum_SN3[ct] = redden_line(1e7/wl, spectrum_SN3[ct], tauV)
+    #SN3 FITS
     # Gather information to make Fits file
     col1 = fits.Column(name='Wavenumber', format='E', array=spectrum_axis_SN3)
     col2 = fits.Column(name='Flux', format='E', array=spectrum_SN3)
@@ -309,6 +355,6 @@ for ampl, ampl_str in zip([HII_ampls, PNe_ampls, SNR_ampls],['BOND', 'PNe_2020',
     print("# -- Creating %s Spectra -- #"%ampl_str)
     if not os.path.exists(output_dir+ampl_str):
         os.makedirs(output_dir+ampl_str)
-    #for spec_ct in tqdm(range(num_syn)):
-    #    create_spectrum(spec_ct, ampl, ampl_str)
-    Parallel(n_jobs=n_threads)(delayed(create_spectrum)(spec_ct, ampl, ampl_str) for spec_ct in tqdm(range(num_syn)))
+    for spec_ct in tqdm(range(num_syn)):
+        create_spectrum(spec_ct, ampl, ampl_str)
+    #Parallel(n_jobs=1)(delayed(create_spectrum)(spec_ct, ampl, ampl_str) for spec_ct in tqdm(range(num_syn)))
