@@ -75,3 +75,13 @@ The contents of each individual notebook are described below:
 5. Dynesty.ipynb
   - Describe Bayesian Method and Functions used in Paper III
   - Visualization of Dynesty's results
+  
+  
+  
+  
+In addition to these tools, we have included the code to create the data used in our BPT-ML paper and the code to train a neural network to do the classification of emission regions. This data and  code is in the subfolder BPT.
+1. GenerateData.ipynb
+  - Read in 3MdB data
+  - Create line ratio data based off emission region type
+2. BPT-ANN-ratios.ipynb
+  - Train neural network to classify emission regions
